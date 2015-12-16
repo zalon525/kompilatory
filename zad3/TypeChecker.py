@@ -1,7 +1,8 @@
 #!/usr/bin/python
 from collections import defaultdict
+
 import AST
-from SymbolTable import SymbolTable, FunctionSymbol, VariableSymbol
+from SymbolTable import SymbolTable, VariableSymbol
 
 ttype = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
 
