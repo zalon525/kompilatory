@@ -87,7 +87,7 @@ class TypeChecker(NodeVisitor):
         self.declType = ''
 
     def visit_Init(self, node):
-        initType = self.visit(node.expr)
+        initType = self.visit(node.expression)
         if initType == self.declType or (initType == "int" and self.declType == "float") or (
                         initType == "float" and self.declType == "int"):
             if self.symbolTable.get(node.name) is not None:

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import re
 import AST
 from scanner import Scanner
 
@@ -108,7 +109,7 @@ class Cparser(object):
 
     def p_init(self, p):
         """init : ID '=' expression """
-        p[0] = AST.Init(p[1], p[3])
+        p[0] = AST.Init(p[1], p[3], p.lineno(1))
  
 
     # def p_instructions_opt(self, p):
@@ -217,7 +218,12 @@ class Cparser(object):
         """const : INTEGER
                  | FLOAT
                  | STRING"""
-        p[0] = p[1]
+        if re.match(r"\d+(\.\d*)|\.\d+", p[1]):
+            p[0] = AST.Float(p.lineno(1), p[1])
+        elif re.match(r"\d+", p[1]):
+            p[0] = AST.Integer(p.lineno(1), p[1])
+        else:
+            p[0] = AST.String(p.lineno(1), p[1])
     
     
     def p_expression(self, p):
@@ -247,13 +253,13 @@ class Cparser(object):
                       | ID '(' error ')' """
 
         if len(p) == 2:
-            p[0] = AST.Const(p[1])
+            p[0] = p[1]
         elif p[1] == '(' and p[3] == ')':
             p[0] = AST.ParenExpression(p[2])
         elif p[2] == '(' and p[1] != '(':
             p[0] = AST.FunctionExpression(p[1], p[3])
         else:
-            p[0] = AST.BinExpr(p[2], p[1], p[3])
+            p[0] = AST.BinExpr(p[2], p[1], p[3], p.lineno(1))
     
     def p_expr_list_or_empty(self, p):
         """expr_list_or_empty : expr_list

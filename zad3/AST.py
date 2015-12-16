@@ -12,9 +12,9 @@ class BinExpr(Node):
 
 
 class Const(Node):
-    def __init__(self, value):
+    def __init__(self, value, line):
         self.value = value
-        # ...
+        self.line = line
 
 
 class Integer(Const):
