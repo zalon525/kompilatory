@@ -187,6 +187,8 @@ class ExpressionList(Node):
         if expression:
             self.expr_list.append(expression)
 
+        self.children = self.expr_list
+
 
 class ParenExpression(Node):
     def __init__(self, expression):

@@ -95,3 +95,12 @@ class TypeChecker(NodeVisitor):
                 self.table.put(node.name, VariableSymbol(node.name, self.declType))
         else:
             print "Type mismatch in assignment of {} to {}. Line {}".format(initType, self.declType, node.line)
+
+    def visit_Assignment(self, node):
+        definition = self.table.getFromAnyEnclosingScope(node.id)
+        type = self.visit(node.expr)
+
+        if definition is None:
+            print "Assignment to undefined symbol {}. Line {}".format(node.id, node.line)
+        elif type != definition.type and (definition.type != "float" and definition != "int"):
+            print "Type mismatch in assignment of {} to {}. Line {}.".format(type, definition.type, node.line)
