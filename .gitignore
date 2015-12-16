@@ -1,4 +1,6 @@
 .*
 !.gitignore
 parser.out
+parsetab.py
+
 
