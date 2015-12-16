@@ -2,7 +2,7 @@
 from collections import defaultdict
 
 import AST
-from SymbolTable import SymbolTable, VariableSymbol
+from SymbolTable import SymbolTable, VariableSymbol, FunctionSymbol
 
 ttype = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: None)))
 
@@ -48,8 +48,9 @@ class NodeVisitor(object):
 
 class TypeChecker(NodeVisitor):
     def __init__(self):
-        self.table = SymbolTable(None, 'root')
+        self.symbolTable = SymbolTable(None, 'root')
         self.declType = ''
+        self.curFunc = None
 
     def visit_BinExpr(self, node):
         type1 = self.visit(node.left)
@@ -70,7 +71,7 @@ class TypeChecker(NodeVisitor):
         return 'string'
 
     def visit_Variable(self, node):
-        definition = self.table.getFromAnyEnclosingScope(node)
+        definition = self.symbolTable.getFromAnyEnclosingScope(node)
 
         if definition is None:
             "Undefined symbol {}. Line: {}".format(node.name, node.line)
@@ -89,18 +90,85 @@ class TypeChecker(NodeVisitor):
         initType = self.visit(node.expr)
         if initType == self.declType or (initType == "int" and self.declType == "float") or (
                         initType == "float" and self.declType == "int"):
-            if self.table.get(node.name) is not None:
-                print "Symbol {} in line {} is already defined earlier".format(node.name, node.line)
+            if self.symbolTable.get(node.name) is not None:
+                print "Symbol {} in line {} is already defined in this scope".format(node.name, node.line)
             else:
-                self.table.put(node.name, VariableSymbol(node.name, self.declType))
+                self.symbolTable.put(node.name, VariableSymbol(node.name, self.declType))
         else:
             print "Type mismatch in assignment of {} to {}. Line {}".format(initType, self.declType, node.line)
 
     def visit_Assignment(self, node):
-        definition = self.table.getFromAnyEnclosingScope(node.id)
+        definition = self.symbolTable.getFromAnyEnclosingScope(node.id)
         type = self.visit(node.expr)
 
         if definition is None:
             print "Assignment to undefined symbol {}. Line {}".format(node.id, node.line)
         elif type != definition.type and (definition.type != "float" and definition != "int"):
             print "Type mismatch in assignment of {} to {}. Line {}.".format(type, definition.type, node.line)
+
+    def visit_ParenExpression(self, node):
+        self.visit(node.expression)
+
+    def visit_Fundef(self, node):
+        if self.symbolTable.get(node.id) is not None:
+            print "Function {} in line {} is already defined in this scope".format(node.id, node.line)
+        else:
+            func = FunctionSymbol(node.id, node.type, SymbolTable(self.symbolTable, node.id))
+            self.symbolTable.put(node.id, func)
+            self.curFunc = func
+            self.symbolTable = func.table
+            if node.args_list is not None:
+                self.visit(node.args_list)
+            self.visit(node.compound_instr)
+            self.symbolTable = self.symbolTable.getParentScope()
+            self.curFunc = None
+
+    def visit_CompoundInstruction(self, node):
+        innerScope = SymbolTable(self.symbolTable, "innerScope")
+        self.symbolTable = innerScope
+        self.visit(node.segments)
+        self.symbolTable = self.symbolTable.getParentScope()
+
+    def visit_PrintInstruction(self, node):
+        self.visit(node.expr_list)
+
+    def visit_LabeledInstruction(self, node):
+        self.visit(node.instruction)
+
+    def visit_ChoiceInstruction(self, node):
+        self.visit(node.condition)
+        self.visit(node.instruction)
+        self.visit(node.else_instruction)
+
+    def visit_WhileInstruction(self, node):
+        self.visit(node.condition)
+        self.visit(node.instruction)
+
+    def visit_RepeatInstruction(self, node):
+        self.visit(node.condition)
+        self.visit(node.instructions)
+
+    def visit_ReturnInstruction(self, node):
+        if self.curFunc is None:
+            print "Return statement outside of a function. Line {}".format(node.line)
+        else:
+            type = self.visit(node.expression)
+            if type != self.curFunc.type and (self.curFunc.type != "float" or type != "int"):
+                print "Invalid return type of {} in line {}. Expected {}".format(type, node.line, self.curFunc.type)
+
+    def visit_FunctionExpression(self, node):
+        funDef = self.symbolTable.getFromAnyEnclosingScope(node.id)
+        if funDef is None or not isinstance(funDef, FunctionSymbol):
+            print "Function {} not defined. Line: {}".format(node.id, node.line)
+        else:
+            if node.expr_list is None and funDef.params != []:
+                print "Invalid number of arguments in line {}. Expected {}". \
+                    format(node.line, len(funDef.params))
+            else:
+                types = [self.visit(x) for x in node.expr_list.children]
+                expectedTypes = funDef.params
+                for actual, expected in zip(types, expectedTypes):
+                    if actual != expected and not (actual == "int" and expected == "float"):
+                        print "Mismatching argument types in line {}. Expected {}, got {}". \
+                            format(node.line, expected, actual)
+            return funDef.type

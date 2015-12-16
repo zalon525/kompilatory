@@ -16,7 +16,7 @@ class FunctionSymbol(Symbol):
         self.name = name
         self.type = type
         self.args = args
-        self.param_types = []
+        self.param_type = []
 
 
 class SymbolTable(object):
