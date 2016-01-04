@@ -58,7 +58,7 @@ class TypeChecker(NodeVisitor):
         oper = node.op
 
         if ttype[oper][type1][type2] is None:
-            print "Invalid binary expresion {}. Line: {}".format(oper, node.line)
+            print "Invalid binary expression {}. Line: {}".format(oper, node.line)
         return ttype[oper][type1][type2]
 
     def visit_Integer(self, node):
@@ -71,10 +71,10 @@ class TypeChecker(NodeVisitor):
         return 'string'
 
     def visit_Variable(self, node):
-        definition = self.symbolTable.getFromAnyEnclosingScope(node)
+        definition = self.symbolTable.getFromAnyEnclosingScope(node.name)
 
         if definition is None:
-            "Undefined symbol {}. Line: {}".format(node.name, node.line)
+            print "Undefined symbol {}. Line: {}".format(node.name, node.line)
         else:
             return definition.type
 
@@ -99,7 +99,7 @@ class TypeChecker(NodeVisitor):
 
     def visit_Assignment(self, node):
         definition = self.symbolTable.getFromAnyEnclosingScope(node.id)
-        type = self.visit(node.expr)
+        type = self.visit(node.expression)
 
         if definition is None:
             print "Assignment to undefined symbol {}. Line {}".format(node.id, node.line)
@@ -107,7 +107,7 @@ class TypeChecker(NodeVisitor):
             print "Type mismatch in assignment of {} to {}. Line {}.".format(type, definition.type, node.line)
 
     def visit_ParenExpression(self, node):
-        self.visit(node.expression)
+        return self.visit(node.expression)
 
     def visit_Fundef(self, node):
         if self.symbolTable.get(node.id) is not None:
@@ -119,6 +119,7 @@ class TypeChecker(NodeVisitor):
             self.symbolTable = func.table
             if node.args_list is not None:
                 self.visit(node.args_list)
+            func.setParamTypesFromTable()
             self.visit(node.compound_instr)
             self.symbolTable = self.symbolTable.getParentScope()
             self.curFunc = None
@@ -161,14 +162,26 @@ class TypeChecker(NodeVisitor):
         if funDef is None or not isinstance(funDef, FunctionSymbol):
             print "Function {} not defined. Line: {}".format(node.id, node.line)
         else:
-            if node.expr_list is None and funDef.params != []:
+            if node.expr_list is None and funDef.param_types != []:
                 print "Invalid number of arguments in line {}. Expected {}". \
-                    format(node.line, len(funDef.params))
+                    format(node.line, len(funDef.param_types))
             else:
                 types = [self.visit(x) for x in node.expr_list.children]
-                expectedTypes = funDef.params
+                expectedTypes = funDef.param_types
                 for actual, expected in zip(types, expectedTypes):
                     if actual != expected and not (actual == "int" and expected == "float"):
                         print "Mismatching argument types in line {}. Expected {}, got {}". \
                             format(node.line, expected, actual)
             return funDef.type
+
+    def visit_Argument(self, node):
+        if self.symbolTable.get(node.id) is not None:
+            print "Argument {} already defined. Line: {}".format(node.id, node.line)
+        else:
+            self.symbolTable.put(node.id, VariableSymbol(node.id, node.type))
+
+    def visit_LexToken(self, node):
+        pass
+
+    def visit_NoneType(self, node):
+        pass

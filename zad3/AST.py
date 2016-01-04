@@ -127,9 +127,10 @@ class LabeledInstruction(Instruction):
 
 
 class Assignment(Node):
-    def __init__(self, id, expression):
+    def __init__(self, id, expression, line):
         self.expression = expression
         self.id = id
+        self.line = line
 
 
 class ChoiceInstruction(Node):  # spr
@@ -152,8 +153,9 @@ class RepeatInstruction(Node):
 
 
 class ReturnInstruction(Node):
-    def __init__(self, expression):
+    def __init__(self, expression, line):
         self.expression = expression
+        self.line = line
 
 
 class BreakInstruction(Node):
@@ -196,9 +198,10 @@ class ParenExpression(Node):
 
 
 class FunctionExpression(Node):
-    def __init__(self, id, expr_list):
+    def __init__(self, id, expr_list, line):
         self.id = id
         self.expr_list = expr_list
+        self.line = line
 
 
 class Fundef(Node):
@@ -223,8 +226,7 @@ class ArgumentsList(Node):
 
 
 class Argument(Node):
-    def __init__(self, type, id):
+    def __init__(self, type, id, line):
         self.type = type
         self.id = id
-
-# ...
+        self.line = line
