@@ -3,8 +3,8 @@ import filecmp
 import unittest
 import os
 
-class AcceptanceTests(unittest.TestCase):
 
+class AcceptanceTests(unittest.TestCase):
     @classmethod
     def add_test(cls, dirpath, filename):
         basename = os.path.splitext(filename)[0]
@@ -16,7 +16,7 @@ class AcceptanceTests(unittest.TestCase):
             return 'test_' + filename
 
         def test_func(self):
-            os.system("python main.py tests/{0} > tests/{1}.actual".format(filename,name))
+            os.system("python main.py tests/{0} > tests/{1}.actual".format(filename, name))
             res = filecmp.cmp("tests/{0}.actual".format(name), "tests/{0}.expected".format(name))
             self.assertTrue(res, "files {0}.actual and {0}.expected differ".format(name))
 
@@ -30,7 +30,8 @@ class AcceptanceTests(unittest.TestCase):
                 if filename.startswith('.'):
                     continue
                 elif filename.endswith('.in'):
-                    cls.add_test(dirpath,filename)
+                    cls.add_test(dirpath, filename)
+
 
 if __name__ == '__main__':
     AcceptanceTests.add_tests('tests/')

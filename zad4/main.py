@@ -1,10 +1,8 @@
-
 import sys
 import ply.yacc as yacc
 from Cparser import Cparser
 from TypeChecker import TypeChecker
 from Interpreter import Interpreter
-
 
 if __name__ == '__main__':
 
@@ -31,4 +29,3 @@ if __name__ == '__main__':
     # ast.accept(OptimizationPass1())
     # ast.accept(OptimizationPass2())
     # ast.accept(CodeGenerator())
-   
